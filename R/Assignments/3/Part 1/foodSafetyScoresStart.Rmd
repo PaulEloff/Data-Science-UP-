@@ -1,0 +1,255 @@
+---
+title: "Simuation Study of Food Safety Scores"
+output: html_document
+---
+## SJP Eloff 10237161
+## Assignment 3 Part 1
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(ggplot2)
+```
+
+# Introduction
+ 
+In this exercise we examine the sampling distribution of a statistic.
+We have the special situation of knowing the population so we can use Monte Carlo simulation to study the sampling distribution of a statistic.
+
+We will examine the sampling distribution of two statistics, the mean and the upper quartile, for a simple random sample of 100 restaurants. Probability theory tells us that the sampling distribution of the mean is approximately normal for large sample sizes (Central Limit Theorem). However, whether or not the sample size is large depends on the population's distribution. 
+
+We will also examine the sampling distribution for a statistic other than the mean.
+In both cases, we use the Monte Carlo method.
+We cannot prove theorems with simulation studies, but we can gain useful insights. 
+
+
+# Population
+
+Since the sampling distribution depends on the population and the sample size (and sampling method), we begin by examining the population.
+
+Our population consists of restaurant food inspection scores for restaurants in San Francisco in 2016. Note this is both an administrative data set AND it is the population of interest.
+
+The data are avaiable in `inspectionScores2016.csv`.   Read the data into R and save it as the data frame `scores`.
+
+```{r}
+scores = read_delim("inspectionScores2016.csv",delim=",")
+```
+
+Examine the structure of `scores`. 
+What is its shape?
+Does it contain only the restaurant scores?
+How many restaurants are in the population?
+
+```{r}
+str(scores)
+length(unique(scores$id))
+```
+The scores dataframe has 4542 observations of 3 variables: *id*, *date* and *score*. The *id* variable identifies the restaurant that was scored (where the restaurant's score is stored in the variable *score*) on a specific date, *date*.
+## Distribution of Scores
+
+Examine the distribution of the population of scores. 
+Consider the mode(s), symmetry, tails, gaps, and anamolous values. Are there any unusual features of this distribution? What do your observation imply about the scores?
+
+```{r}
+ggplot(scores,aes(score)) +
+  geom_histogram(bins=50)
+
+```
+
+
+The distribution is unimodal with a peak at 100. 
+
+The distribution is skewed left (as expected with a variable bounded on the right). The distribution has a long left tail with some restaurants receiving scores 
+that are in the 50s, 60s, and 70s. 
+
+One unusal feature of the distribution is the 
+bumpiness with even numbers having higher counts than odd. This may be because the violations result in penalties of 2, 4, 10, etc. points.
+
+
+
+# Our Sample
+
+To study the sampling distribution of a sample statistics, we need to
+simulate the process of taking a sample from the population.
+Use `sample()` to take a sample of 100 restaurant scores.
+
+```{r}
+set.seed(12341)
+
+scores_samp = sample(scores$score,size=100,replace=FALSE)
+```
+
+Compare the sample's distribution to the population's. How do they differ? How are they the same?
+
+```{r}
+ggplot(data.frame(score=scores_samp),aes(x=score)) +
+  geom_histogram(bins=50)
+```
+
+
+The sample histogram has similar features as the population distribution.
+That is, it is unimodal with a peak near 100. 
+The distribution is also skewed left and has a long left tail. 
+The sample also has the bumpy quality because it too is missing odd numbered scores in the upper region.
+
+The sample distribution differs from the population in one obvious way. 
+The sample is missing some of the lowest scores. Since our sample is 100, we will
+not have all possible scores, especially rare scores. 
+
+## The Sample Mean
+
+Compare the mean of the population to the mean of your sample.
+How close are they?
+
+```{r}
+mean(scores$score)
+mean(scores_samp)
+```
+The means are quite close to each other.
+
+# Sampling distribution of the mean
+
+If we were to take another sample, we would get a differnt collection of scores and a different sample mean. We can simulate this process to see how the sample mean varies from one sample to the next.
+
+Use the `replicate()` functions to take 10000 samples of size 100 and record their means. Assign these means to `samp_means`.
+
+```{r}
+set.seed(123454321)
+samp_means = replicate(10000,mean(sample(scores$score,size=100,replace=FALSE)))
+```
+
+
+What does the distribution of these 10000 sample means look like?
+Describe the shape of the distribution. Is it normally distributed?
+In addition to examining a histogram of the sample means, make a normal quantile plot to compare the empirical distribution to the theoretical normal.
+
+
+```{r}
+ggplot(data.frame(avg_score=samp_means),aes(x=avg_score)) +
+  geom_histogram(bins=40)
+```
+
+
+
+```{r}
+qqnorm(samp_means)
+```
+
+The sampling distribtuion of the mean of 100 observations looks quite close to a normal. Our approximate distribution is centered very close to the population mean, and the SD of the means is about 0.8.    
+
+```{r}
+mean(samp_means)
+sd(samp_means)
+```
+
+
+# The Sampling Distribution of another statistic
+
+Suppose we are interested in the 75th percentile of the scores, rather than the average score.
+
+Carry out a Monte Carlo study of the sampling distribution of the upper quartile. 
+Again, use a sample of size 100 and take 10000 repliates. Assign your sample upper quartiles to `samp_uqs'.
+
+```{r}
+set.seed(123454321)
+samp_uqs = replicate(10000,quantile(sample(scores$score,size=100,replace=FALSE),probs=0.75))
+```
+
+
+Make a histogram of the 10000 75th percentiles. Describe the features of this histogram. What happened? Why does the distribution look so strange?
+
+```{r}
+ggplot(data.frame(uq_score=samp_uqs),aes(x=uq_score)) +
+  geom_histogram(bins=40)
+```
+
+
+The sampling distribution is quite far from normal. This is due to the discreteness of the distribution, especially at the upper tail of the distribution where there are only a few possible scores. 
+
+
+# The Bootstrap sampling distribution 
+
+In practice we often do not have the population, so we need to rely on theory, such as the Central Limit Theorem, or the *bootstrap* to estimate the sampling distribution of the sample mean.  
+
+The bootstrap uses the property that the sample is representative of the population.  We let our sample stand in for the population. We call it the *bootstrap population*. 
+
+We use the Monte Carlo method to find the sampling distribution of the sample mean for samples from the bootstrap population.  That is, we imitate the process of taking a sample from the population, by taking a sample from the bootstrap population. A sample from the bootstrap population is referred to as a *bootstrap sample* and the mean of a bootstrap sample is called the *bootstrap sample mean*. 
+
+The sampling distribution of the bootstrap sample mean should behave like the sampling distribution of the sample mean. By this we mean, it should have a similar shape and spread. We know that it will not be centered on the population mean, but instead it will be centered on the bootstrap population mean.
+
+Take 10000 bootstrap samples from our sample (recall that we saved it in `scores_samp`) and examine the bootstrap sampling distriubtion of the 10000 bootstrap means. Call the set of 10000 means, `boot_samp_means'.
+
+```{r}
+set.seed(123454321)
+boot_samp_means = replicate(10000,mean(sample(scores_samp,size=100,replace=TRUE)))
+```
+
+
+Notice that the code is nearly identical to the code we wrote earlier.  How is it different?
+
+1. Rather than using `scores` to sample from, we use `scores_samp`. That is, we are using our sample as the population.
+1. Rather than sampling without replacement, we sample with replacement. Since our population is so large there is little difference between these two, and with the bootstrap population we must sample with replacement because we have only 100 scores. 
+
+
+Make a histogram of `boot_samp_means'.
+
+
+```{r}
+ggplot(data.frame(avg_score=boot_samp_means),aes(avg_score)) +
+  geom_histogram(bins=40)
+```
+
+Compare the distribution of `boot_samp_means' to the distribution of `samp_means'
+
+These two distributions look very similar. 
+
+## Bootstrap confidence interval
+
+We can use the bootstrapped sampling distribution to create a bootstrap confidence interval for the population mean. To do this, we use the percentiles of the bootstrap sampling distribution. The `quantile()` function is helpful here.
+
+```{r}
+quantile(boot_samp_means,probs=c(0.025,0.975))
+```
+
+Compare this confidence interval to a confidence interval that you obtain using normal theory and our single sample (`scores_samp`). Here the `qnorm()` function will be useful
+
+```{r}
+mean(scores_samp) - qnorm(0.975)*sd(scores_samp)/sqrt(100)
+mean(scores_samp) + qnorm(0.975)*sd(scores_samp)/sqrt(100)
+```
+
+
+
+## Upper quartile
+
+Carry out the bootstrap procedure to approximate the sampling distribution of the upper quartile. Again, use our sample `scores_samp'. 
+
+```{r}
+set.seed(123454321)
+boot_samp_uq = replicate(10000,quantile(sample(scores_samp,size=100,replace=TRUE),probs=0.75))
+```
+
+
+Make a histogram of the bootstrapped 75th percentiles. 
+Does this bootstrapped sampling distribution also look strange?
+
+```{r}
+ggplot(data.frame(uq_score=boot_samp_uq),aes(uq_score)) +
+  geom_histogram(bins=40)
+```
+
+This distribution again looks strange due to the discreteness of the distribution.
+
+
+## Summary of the Bootstrap 
+
+Bootstrapping is powerful BUT
+
+* Make sure that the original sample is large and random so that the sample resembles the population
+* Repeat the bootstrap process many times. Typically 10000 replications is a reasonable number
+* The bootstrap tends to have difficulties when
+   * The parameter estimate is influenced by outliers
+   * The parameter is based on extreme values of the distribution
+   * The sampling distribution of the statistic is far from bell-shaped
+   
+

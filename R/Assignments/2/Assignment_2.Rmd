@@ -1,0 +1,232 @@
+---
+title: "Student Evaluation of Teaching"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+# Introduction
+
+This exercise is based on the work of Boring, Ottoboni, and Stark (2016) "Student evaluations of teaching (mostly) do not measure teaching effectiveness"
+
+In an online course, the students never met their TA in person. They were assigned to their section at random. There were two TAs, one male and one female. Each TA taught two sections. In one of their two sections they swapped names with each other and were identified as the other person.
+
+We will examine the student evaluations of TA promptness in returning assignments. Of note is that 
+* Grading of homework is shared between the two TAs
+* Homework returns were coordinated
+
+
+It was found that the students gave lower evaluations for promptness to the TA whom they thought was the female TA. We want to consider the possibility that this could be explained by the random assignment of students to sections.
+
+
+# Data preparation 
+
+The data are available in "Macnell-RatingsData.csv".
+Read the data and assign it to a data frame called `set`.
+
+
+```{r}
+set = read_delim("Macnell-RatingsData.csv", delim = ",")
+dim(set)
+set
+```
+
+
+
+Examine a few records. We will investigate the `prompt` variable, which contains the student rating on the TAs promptness. Scores can be integer values from 1 through 5,with 5 being the highest. For our invesigation, we also need the information in `tagender` and `taidgender` in order to compare the ratings for the different TAs.
+
+```{r}
+head(set)
+```
+
+Reduce the data frame to just these three variables. That is, keep only a subset of the variables in `set`.
+
+```{r}
+set <- select(set,'prompt','tagender','taidgender')
+```
+
+
+## The Design
+
+The `tagender` and `taidgender` variables consist of 0s and 1s. 
+We do not know whether 0 stands for male or female.
+One way to figure this out is to tally up the number of evaluations for each combination of `tagender` and `taidgender` and compare this to the study description in the publication.  
+
+Find these counts.
+
+
+```{r}
+count(set,tagender,taidgender)
+```
+
+The students taught by the female TA are divided roughly equally between the 2 groups who perceived the TA to be male and 11 perceived the TA as female.
+The students taught by the male TA are similarly divided: for 13 students he was identified as female and for 11 he was identified as male.
+
+When we check our tallies against the published counts, we find that the TAs gender and perceived gender are both recorded as 0 for female and 1 for male. 
+Let's convert these variables to factors so it will be easier to follow the analysis. 
+
+```{r}
+set = mutate(set, 
+                tagender = factor(tagender, levels= c(0,1), 
+                                  labels = c("female", "male")),
+                taidgender = factor(taidgender, levels = c(0, 1),
+                                    labels = c("female","male")))
+set
+```
+
+
+# EDA
+
+Our goal is to study the differences between the male and female TAs on their scores for promptness.
+We want to compare these scores for the perceived and actual gender of the TA.
+Make two plots that explore this comparison.
+
+Describe any interesting features.
+
+```{r}
+with(set, stripchart(prompt ~ taidgender + tagender, 
+                     vertical = TRUE, method = "jitter",
+                     ylab = "Evaluation of Promptness"))
+```
+
+```{r}
+ggplot(subset(set,!is.na(prompt)),aes(x=taidgender,y=prompt)) +
+  geom_boxplot() +
+  ylab("Promptness boxplot") +
+  xlab("Perceived gender of TA")
+```
+
+
+It appears that the same TA received higher scores when identified as male.
+
+# The statistic  
+
+Boring et al compared two means: the mean rating for promptness of the identified female and male TAs. 
+Compute these two means.
+
+```{r}
+summarize(group_by(set,taidgender),mean(prompt, na.rm = TRUE))
+```
+
+Note that the average score for the identified female TA is 0.8 lower than the average for the identified male TA. If gender doesn't matter, then these 2 pooled means should be close to 0 because they have roughly the same number of students assigned to each TA. 
+
+How likely is it that random assignment of the students to the TAs can lead to a difference as large as -0.8 or larger?
+
+# The Design
+
+Let's assume that the students would have given their TA the same score for promptness whether or not they are identified as male or female. 
+
+Under this assumption, we can compare what actually happened to all the possibilities that might have happened under a different random assignment of students to sections. 
+
+For our experimental design, we
+* keep the number of students in each section constant 
+* keep the students assigned to the female TA the same, and likewise for the students assigned to the male TAs section.
+* mix the students in the female's two sections, and mix the students in the male's two sections.  
+
+That is, we want to examine all possible assignments of the 23 students taught by the female TA to her two sections, and we want to examine all possible random assignments of the 24 students taught by the male TA to his two sections.
+
+Each of these random allocations is equally likely so we can potentially compute the exact probability of observing a value of -0.8 under this model. However, there are far too many combinations to enumerate them all so we use simulation to estimate this permutation distribution. From this approximate distribution we can estimate how likely it is to get a score of -0.8 or lower from the proportion of observed scores that fell at or below -0.8.
+
+# The Simulation
+
+We identify the steps of this process to be:
+
+1. Randomly assign 11 of the female TA's scores to the identified-female group, and the remainder to the identified-male group. Randomly assign 13 of the male TA's scores to the identified-female group and the remainder to the identified male group.
+1. Compute the difference in average scores for the identified-female and identified-male groups.
+1. Repeat these steps many times to create an approximate sampling/permutation distribution for the statistic, i.e., the difference in average scores for the 2 groups.
+1. Use the approximate distribution to estimate the probability of observing a statistic as low as or lower than the one that we observed in our original data.
+
+## Set up
+
+We first determine the various counts we need for working with the permutations and sections. That is, we find the number of students taught by each TA and the number of students in each section. Assign these values to `ta_count` and `sec_count` respectively.
+
+```{r}
+ta_count = count(set,tagender)
+sec_count = c(11,12,11,13)
+ta_count
+sec_count
+```
+
+We next devise a single permutation of the female and male TA’s scores. 
+It will be easiest if we create two vectors, one for the male TA's students and one for the female TA. Call these `set_male` and `set_female`.
+
+```{r}
+prompt_male = filter(set,tagender=="male")$prompt
+prompt_female = filter(set,tagender=="female")$prompt
+```
+
+We want to randomly permute the scores for promptness within the male sections and 
+separately within the female sections. 
+
+```{r}
+permute_prompt_f  = sample(prompt_female)
+permute_prompt_m  = sample(prompt_male)
+permute_prompt_f
+permute_prompt_m
+```
+
+Then, we take the first 13 of the male scores and  the first 11 of the female scores for the identified female group. Call this arrangment `rand_id_f`
+
+```{r}
+rand_id_f = c(permute_prompt_f[1:sec_count[1]],
+              permute_prompt_m[1:sec_count[3]])
+rand_id_f
+```
+
+Note that we have included the nonresponders in the randomization, but they are excluded when we compute the average score for the group.
+
+We similarly construct the random set of scores for the identified male TA, which we call `rand_id_m`
+
+```{r}
+rand_id_m = c(permute_prompt_f[-(1:sec_count[1])],
+              permute_prompt_m[-(1:sec_count[3])])
+rand_id_m
+```
+
+From these permuations, we can compute our statistics: the difference in pooled means.
+
+```{r}
+mean(rand_id_f,na.rm=TRUE) - mean(rand_id_m,na.rm=TRUE)
+```
+
+## Replicate
+
+We can put all of these steps together (place them within curly braces in a call to `replicate`) and repeat them 2000 times.
+
+```{r}
+set.seed(12468124)
+sampleStats = replicate(3000, {
+  permute_prompt_f  = sample(prompt_female)
+  permute_prompt_m  = sample(prompt_male)
+  rand_id_f = c(permute_prompt_f[1:sec_count[1]],
+              permute_prompt_m[1:sec_count[3]])
+  rand_id_m = c(permute_prompt_f[-(1:sec_count[1])],
+              permute_prompt_m[-(1:sec_count[3])])
+mean(rand_id_f,na.rm=TRUE) - mean(rand_id_m,na.rm=TRUE)
+})
+```
+
+## Summarize the simulation
+
+We examine the distribution of these randomly generated test statistics and count te number of times they were as small or smaller than our observed statistic of -0.8. 
+
+```{r}
+ggplot(data = data.frame(sampleStats), aes(sampleStats)) +
+  geom_histogram(bins = 40) +
+  geom_vline(xintercept = -0.8) +
+  labs(x = "Test Statistic")
+```
+
+We find  the proportion of our 3000 sample statistics at or below -0.8.
+
+```{r}
+sum(sampleStats) / length(sampleStats)
+```
+
+

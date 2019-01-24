@@ -1,0 +1,29 @@
+---
+title: "Chapter 2 Practical"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The claim sizes, $X$, arising from a particular short term insurance portfolio have a gamma distribution with parameters $\alpha$  and  $\lambda$, where $\lambda$  is assumed to vary according to an Exp($\mu$ ) distribution. 
+
+(a)	Derive a theoretical formula for maximum likelihood estimates of $\alpha$ and $\lambda$ and  $\mu$. Type the derivations here using Latex:
+
+ADD YOUR DERIVATIONS HERE
+
+(b)	Use the data set provided with realisations from the gamma and exponential distributions to calculate the values of the estimates in (a). Also calculate the estimates if you use only half of the observations (random choose half of them) in the data set. Use SAS to do this. You do not need to add the code or results into this file. Save them in a separate document e.g. Word. 
+
+
+(c)	Derive the posterior distribution of $\lambda$  based on the random sample of  $n$ claims, $x_1,x_2,...,x_n$ provided in the data set. Type the derivations here using Latex:
+
+TYPE YOUR ANSWERS HERE
+
+Provide answers for both cases in (b) - type the answers here in Latex. 
+
+TYPE YOUR ANSWERS HERE
+
+(d)	Find an expression for the Bayes estimator for  under the "all-or-nothing" loss function using the data provided in the data set. Provide answers for both cases in (b). Type the answers here in Latex. 
+
+TYPE YOUR ANSWERS HERE

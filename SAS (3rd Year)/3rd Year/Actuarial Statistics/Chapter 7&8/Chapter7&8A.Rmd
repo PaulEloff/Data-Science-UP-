@@ -1,0 +1,23 @@
+---
+title: "Chapter 7 and 8 Practical A"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Consider the collective risk model \[S=\sum_{i=1}^N X_i\]  with $N \sim$Poisson$(\lambda)$  and $X \sim \textrm{exp}(\alpha)$.
+
+a) Write code in R to simulate the model for (i) $\lambda = 5$, $\alpha = 10$, and (ii) $\lambda = 40$, $\alpha = 10$.
+
+```{r}
+#ANSWER HERE
+
+```
+b) Repeat the process in (a) 100 times and plot a histogram of the 100 $S$  values for each case (i) and (ii).
+
+```{r}
+#ANSWER HERE
+
+```

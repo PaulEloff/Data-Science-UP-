@@ -1,0 +1,22 @@
+Practical 3 format
+With this practical, we are changing the handout and submission format.
+
+Handout:
+
+The questions are captured in two formats: html and .rmd (R markdown).
+The html format is a flat file which reads like a normal document.
+It doesn't contain any links. The rmd format is an R markdown file can be opened in R Studio.
+You will see the empty code chunk spaces where you can write your code.
+
+Submission:
+
+For this practical, ONLY code must be submitted. NO answer sheet. Submission can be done in one of two ways:
+
+1. Use the html handout and write an R script to answer the questions. Your submission is then a .r script.
+   Use the same principals as with previous practical script writing.
+2. Fill in the R markdown code chunks on the handout .rmd file. Submit the .rmd file.
+
+Tip with option 2: Make sure you can knit your file - a good way to ensure that all the code chunks run.
+
+As always: Type your name and student number at the top and save the file containing your student number 
+(Something like STUDENTNO_prac3)

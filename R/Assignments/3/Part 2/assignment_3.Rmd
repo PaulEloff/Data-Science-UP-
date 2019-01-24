@@ -1,0 +1,140 @@
+---
+title: "Bootstrapping"
+output: html_document
+---
+## SJP Eloff 10237161
+## Assignment 3 Part 2
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(statsr)
+library(dplyr)
+library(ggplot2)
+```
+
+In November 2016, the voters elected a new president of the United States. Prior to the election, thousands of polls were taken to gauge the popularity of each of the candidates. Leaving aside the idea that popular opinion changes over time, a poll can be thought of as a sample of individuals measured so as to estimate the proportion of all voters who will vote for each candiate (i.e. the population parameter).
+
+In this assignment, we will focus on sampling variability - the variability in sample proportions due to polling different randomly selected individuals from the population.
+
+### Question 1: What is the population parameter of interest?
+Answer: The proportion of all voters who will vote for Candidate X on election day.
+
+## Load the data - all_polls.RData 
+
+
+```{r}
+all_polls <- get(load("all_polls.RData"))
+```
+
+### Question 2: Understanding the data
+2a. What are the dimensions of the data set?
+```{r}
+dim(all_polls)
+```
+There are 30000 observations of 2 variables.
+
+2b. How many polls are in the data set?
+```{r}
+length(unique(all_polls$poll))
+```
+There are 1000 polls in the data set.
+
+### Question 3: EDA
+
+3a. What is the voting proportions across all polls?
+3b. Plot this voting propotion in a bar graph
+    - Give the plot a title
+    - Assign x axis tick marks 'Vote 0' and 'Vote 1'
+    
+```{r}
+all_polls_1 <- all_polls %>% group_by(vote) %>%
+                           summarise(n=n()) %>%
+                           mutate(overall_prop=n/sum(n))
+
+all_polls_1 %>% ggplot(aes(x=factor(vote),y=overall_prop)) +
+                geom_bar(stat="identity") +
+                ggtitle("Predicted proportions of non-voters (Vote 0) vs. voters (Vote 1)") +
+                scale_x_discrete(breaks=0:1,labels=c("Vote 0","Vote 1")) +
+                ylab("Proportion") +
+                theme(axis.title.x = element_blank())
+```
+
+
+## Question 4: Resampling from a sample
+To investigate how much estimates of a population proportion change from sample to sample, you will set up two sampling experiments. In the first experiment, you will simulate repeated samples from a population - a method called Monte Carlo simulation. In the second, you will choose a single sample from the first experiment and repeatedly resample from that sample - a method called bootstrapping.
+
+### Experiment 1 - Monte Carlo Simulation
+Assume the true proportion of people who will vote for Candidate X is 0.6. Repeatedly sample 30 people from the population and measure the variability of p_hat (the sample proportion).
+
+- Compute the sample proportion for each of the 1000 original samples. Assign the result to ex1_props.
+
+
+```{r}
+# Compute p-hat for each poll: ex1_props
+ex1_props <- all_polls %>% group_by(poll) %>% 
+                           summarise(poll_props=mean(vote))
+
+# Compute p-hat from random sampling:
+set.seed(1248421)
+ex1_repeated = replicate(1000,mean(sample(all_polls$vote,size=30,replace=FALSE)))
+
+mean_p_hat <- mean(ex1_repeated)
+variability_p_hat <- sd(ex1_repeated)
+```
+From the output above we see very low variability in p_hat when sampling from the population. Moreover, the mean of p_hat is very close to 6.
+
+### Experiment 2 - Bootstrapping
+Take one sample of size 30 from the same population. Repeatedly sample 30 people (with replacement) from the original sample and measure the variability of p_hat? (the resample proportion).
+
+Design:
+- Create a data frame called one_poll by filtering all_polls for only values from the first poll.
+- Take 1000 different resamples of size 30 from one_poll with replacement. 
+- Assign the result to one_poll_boot_30. Note that in the original sample, one_poll, 21/30 = 70% of people are planning to vote for Candidate X.
+- Compute the sample proportion for each of the 1000 resamples in one_poll_boot_30. Assign the result to ex2_props.
+- Using summarize() and sd(), compare the variability in sample proportions for the two different sampling experiments (one at a time).
+
+```{r}
+# Select one poll from which to resample: one_poll
+one_poll <- all_polls %>% filter(poll==1) %>%
+                          select(vote)
+
+# Generate 1000 resamples of one_poll: one_poll_boot_30
+one_poll_boot_30 <- one_poll %>% rep_sample_n(size=30,replace=TRUE,reps=1000)
+
+# Compute p-hat* for each resampled poll: ex2_props
+ex2_props <- one_poll_boot_30 %>% summarise(poll_prop1=mean(vote))
+
+# Compare variability of p-hat and p-hat*
+variability_p_hat_star <- ex2_props %>% summarise(sd(poll_prop1))
+```
+We observe that the variability of p_hat and p_hat* are very alike.
+
+## Question 5 - Visualisation
+In order to compare the variability of the sampled p^ and p^??? values in experiments 1 & 2, it is valuable to visualize their distributions. Create smoothed density plots of each of the 1000 p^ and p^??? values on the same graph.
+
+```{r}
+# Create smoothed density curves for both experiments
+ggplot() +
+  geom_density(data=ex1_props,aes(x=poll_props),color="orange") +
+  geom_density(data=ex2_props,aes(x=poll_prop1),color="brown")
+```
+## Question 6 - Bootstrap t-confidence intervals
+
+1. Compute p-hat from one_poll (in previous question)
+2. Bootstrap to find the standard error of p-hat and assign it to the variable: one_poll_boot
+3. Find an interval of values that are plausible for the true parameter by calculating p-hat +- 2SE.
+
+```{r}
+# Compute p-hat from one_poll: p_hat
+p_hat <- mean(one_poll$vote)
+
+one_poll_boot <- one_poll %>% rep_sample_n(30,replace=TRUE,reps=1000) %>%
+                              summarise(poll_prop_boot=mean(vote))
+
+# Create an interval of plausible values
+one_poll_boot %>% summarise(lower=p_hat-2*sd(poll_prop_boot),upper=p_hat+2*sd(poll_prop_boot))
+```
+

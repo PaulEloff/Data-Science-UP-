@@ -1,0 +1,130 @@
+---
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+# S.J.P. Eloff (10237161)
+# Practical 3 - Exploratory Data Analysis
+# Submission: 13 August 2018, 17:30
+
+This practical is based on a  dataset containing the prices and other attributes of almost 54,000 diamonds.
+
+```{r message=FALSE,cache=FALSE}
+library("tidyverse")
+library("ggplot2")
+library("dplyr")
+diamonds
+```
+
+## Variation
+
+### Question 1 - Discrete variables
+
+a. Visualise the variable 'cut' with a bar graph
+b. The height of the bars displays how many observations occurred with each x value. Compute these values manually and assign the values to a variable 'cut_count'
+
+### Answers 1
+```{r, question_1}
+## a. Amount of diamonds per cut type.
+ggplot(diamonds,aes(cut)) +
+  geom_bar()
+
+## b. The manual method to calculate and display the data from above follows below.
+summary_b <- diamonds %>% group_by(cut) %>% summarize(cut_count=n())
+summary_b
+```
+
+### Question 2 - Continuous variables
+
+a. Visualise the variable 'carat' with a boxplort
+b. Visualise the variable 'carat' with a histogram using binwidth = 0.5
+c. Compute a frequency table of the variable 'carat' (with the same binwidth) and assign the values to a variable 'carat_freq'
+d. Filter diamonds with a size of less than three carats. Asign this filtered data to a variable 'smaller.
+On the filtered variable 'smaller':
+e. Overlay multiple histograms - one for each cut using geom_freqpoly() which produces line rather than bar histograms. Add a title to the plot.
+
+
+### Answers 2
+```{r, question_2}
+#a. A boxplot representing the interesting relationship between carat and clarity.
+ggplot(diamonds,aes(clarity,carat)) +
+  geom_boxplot()
+
+#b. A histogram depicting the amount of diamonds in each 0.5 binwidth carat class.
+ggplot(diamonds,aes(carat)) +
+  geom_histogram(binwidth=0.5)
+
+#c. A frequency table of the carat variable.
+binwidth = c(0,0.5,1,1.5,2,2.5,3,3.5,4,4.5,5)
+summary_c <- cut(diamonds$carat,breaks=binwidth)
+summary_c = factor(summary_c)
+table(summary_c)
+
+#d. Filtered data labeled as 'smaller'.
+smaller <- filter(diamonds,carat<3)
+smaller
+
+#e. Histograms of carat frequencies for each cut.
+ggplot(smaller,aes(carat,colour=cut)) +
+  geom_freqpoly(binwidth=0.5)
+
+```
+ 
+## Covariation
+
+### Question 3 -  A categorical and continuous variable
+a. Visualise the variable 'smaller' for each cut using boxplots. Assign different colorus to each boxplot. Add a title to the plot.
+
+b. Visualise the distribution of price by cut using geom_boxplot(). Assign different colors to each boxplot. Add a title to the plot.
+
+### Answers 3
+```{r, question_3}
+#a. Carat statistics for each cut represented by boxplots.
+ggplot(smaller,aes(cut,carat,colour=cut)) +
+  geom_boxplot() +
+  ggtitle("Carat statistics for each cut represented by boxplots")
+
+#b. Price statistics for each cut represented by boxplots.
+ggplot(smaller,aes(cut,price,colour=cut)) +
+  geom_boxplot() +
+  ggtitle("Price statistics for each cut represented by boxplots")
+
+```
+
+
+### Question 4 -  Two categorical variables
+Consider the following plot of diamond cut vs color (both categorical variables):
+```{r}
+ggplot(data = diamonds) +
+  geom_count(mapping = aes(x = cut, y = color))
+```
+The size of each circle in the plot displays how many observations occurred at each combination of values. Covariation will appear as a strong correlation between specific x values and specific y values.
+
+a. Create an alternative visualisation for these two variables using geom_tile(). Change the colour palette to `spectral'
+
+### Answers 4
+
+```{r}
+spectral_ds <- diamonds %>% count(cut,color)
+ggplot(spectral_ds) +
+  scale_colour_brewer(palette="Spectral") +
+  geom_tile(aes(cut,color,fill=n))
+```
+
+### Question 5 - Two continuous variables
+Visualise price vs carat using geom_boxplot().
+- Assign diamond clarity to colour
+- Reverse the direction of the scale so that the worst diamond clarity is assigned to dark blue and best diamond clarity is assignmed to white.
+- Make the legend heading 'Diamond clarity'
+- Make the plot background dark for better display
+
+### Answers 5
+```{r}
+ggplot(diamonds) +
+  scale_color_brewer(palette="Blues",direction=-1) +
+  geom_boxplot(aes(carat,price,colour=clarity)) +
+  labs(colour="Diamond clarity") +
+  ggtitle("Price plotted against carat (by clarity, shown in colour)") +
+  theme_dark()
+```
+

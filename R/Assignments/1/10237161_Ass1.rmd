@@ -1,0 +1,73 @@
+---
+title: "Assignment 1 - STK 353"
+author: "SJP Eloff 10237161"
+date: "September 10, 2018"
+output: html_document
+---
+
+```{r, Packages, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+##Question 1: What is the chance that as few as 56 or fewer of the sick children are given the vaccine?
+Our aim is to investigate the effectiveness of the vaccine.
+
+###1a) Provide information about the Urn model.
+The Urn is defined as containing 400,000 marbles (representing children); 399,802 with value 0 to represent healthy children and the rest (198) with value 1 to represent sick children. Then, 200,000 marbles are drawn from the Urn at random and without replacement, which represents the 200,000 children drawn to receive the vaccine. For each trial, we summarize by simply summing over all drawn values to find the total number of sick children that were drawn in that trial. The mean is then calculated from these summations and it estimates the expected value of one draw. The data is also plotted in the histogram, below, in Question 1b).
+  
+###1b) Sample 50,000 trials from the Urn model and show a histogram of the results.
+
+```{r, Polio}
+#Define the Urn
+marblesP = c(0,1)
+kP = c(399802,198)
+urnP = rep(marblesP,times=kP)
+
+#Simulate 50,000 trials
+trialsP = replicate(50000,sum(sample(urnP,200000,replace=FALSE)))
+
+#Summarize the data
+mean(trialsP) #for Question 1d)
+sd(trialsP) #for Question 1d)
+sum(trialsP<=56) #for Question 1c)
+hist(trialsP,breaks=50,col="Green")
+# the number of standard deviations that 56 is away from the mean:
+(mean(trialsP)-0)/sd(trialsP)
+```
+
+###1c) What is the chance that only 56 or fewer of the sick children are given the vaccine?
+None of the 50,000 trials resulted in only 56 or fewer sick children receiving the vaccine, i.e. from empirical estimation, there is a near-zero probability of this happening.
+
+###1d) Do you think the vaccine is effective? Motivate your answer.
+Yes. The hypothesis that the effect of the vaccine is negligible was falsified by our Urn model using the Central Limit Theorem. Since placebo controls and double-blind evaluations were implemented in the experiments, we can have confidence in the result that vaccine is effective since 56 is approximately 14 standard deviations away from the mean.
+
+##Question 2: Use the Urn model to determine if the Calcium treatment is effective or not
+Our aim is to investigate the effectivesness of the Calcium treatment
+
+###2a) Provide information about the Urn model.
+The Urn is defined as containing 20 marbles (representing changes in blood pressure); they have the values defined in the code below for the variable *urnC* - note each marble has its own defined value, although some values occur multiple times. Then, 10 marbles are drawn from the Urn at random and without replacement. For each trial, we summarize by finding the average value (change in blood pressure) in order to test the hypothesis that the Calcium treatment made no difference. The data is plotted in the histogram, below, in Question 2b).
+
+###2b) Sample 50,000 trials from the Urn model and show a histogram of the results.
+
+```{r, Calcium}
+#Define the Urn
+urnC = c(7,-4,18,17,-3,-5,1,10,11,-2,-1,12,-1,-3,3,-5,5,2,-11,-1,-3)
+
+#Simulate 50,000 trials
+trialsC = replicate(50000,mean(sample(urnC,10,replace=FALSE)))
+
+#Summarize the data
+mean(trialsC) #for Question 2d)
+sd(trialsC) #for Question 2d)
+hist(trialsC,breaks=50,col="Blue")
+# the number of standard deviations that 0 is away from the mean:
+(mean(trialsC)-0)/sd(trialsC)
+```
+
+###2c) Discuss your method to test whether the treatment is effective or not.
+We use the Central Limit Theorem to test the hypothesis that the changes in blood pressure were unaffected by Calcium treatments. Using 50,000 trials, we derive an empirical estimate to the true distribution of the changes in blood pressure and we compare this to a Normal distribution with mean zero (since unaffected blood pressures are expected to remain the same, on average).
+
+###2d) Do you think the Calcium treatment is effective? Motivate your answer.
+Following the method described in Question 2c) we note that it seems likely that the changes in blood pressure were unaffected by the Calcium treatment - if there were no effects from the treatment, the mean would have been close to zero, but note that zero is only around 1.27 standard deviations away from the mean. This is not significant enough to make confident conclusions. More data points (treated and untreated people's blood pressures) need to be gathered to investigate further.

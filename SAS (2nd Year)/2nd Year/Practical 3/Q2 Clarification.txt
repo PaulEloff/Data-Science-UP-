@@ -1,0 +1,1 @@
+Question 2 of Practical 3 is started with the definition and an example for Frequency limit definition of probability. The example is based on flipping a dice. Since there was a confusion about this question, the question that is supposed to be done for Practical 3 is based only on  rolling a dice which starts from Page 3 of the Practical.

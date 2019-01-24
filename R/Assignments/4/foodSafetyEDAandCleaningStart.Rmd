@@ -1,0 +1,768 @@
+---
+title: "FoodSafetyHW"
+output: html_document
+author: "SJP Eloff (10237161)"
+date: "14 October 2018"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+For this case study, you will investigate restaurant food safety scores for restaurants in San Francisco. 
+The scores and violation information have been made available by the San Francisco Department of Public Health. The main goal for this assignment is to understand how restaurants are scored. 
+We will walk through the various steps of exploratory data analysis to do this. To give you a sense of how we think about each discovery we make and what next steps it leads to we will provide comments and insights along the way.
+
+As we clean and explore these data, you will gain practice with:
+* Reading simple csv files
+* Working with data at different levels of granularity
+* Identifying the type of data collected, missing values, anomalies, etc.
+* Exploring characteristics and distributions of individual variables
+
+In many of these assignments (and your future adventures as a data scientist) you will use several R libraries, including 
+readr, ggplot2, dplyr and tidyr. Load these into your R session with
+
+```{r}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+```
+
+## Loading Food Safety Data
+
+To begin our investigation, we need to understand the structure of the data. Recall this involves answering questions such as 
+
+* Is the data in a standard format or encoding?
+* Is the data organized in records?
+* What are the fields in each record?
+
+There are 3 files called
+
+* businesses.csv
+* inspections.csv
+* violations.csv
+ 
+Read each into R. Assign the businesses file to `bus', the inpections file to `ins' and the violations to `vio'. You might want to examine them first to determine their format and which function to use to read them in.
+Hint: the business file has an 'ISO-8859-1' encoding.
+
+```{r}
+bus = read.csv("businesses.csv", 
+                  encoding='ISO-8859-1', stringsAsFactors = FALSE)
+ins = read.csv("inspections.csv",
+               stringsAsFactors = FALSE)
+vio = read.csv("violations.csv", 
+               stringsAsFactors = FALSE)
+```
+
+Examine a portion of each of the three data frames.
+
+```{r}
+head(bus)
+head(ins)
+head(vio)
+```
+
+We will explore each file in turn, including determining its granularity and primary keys and exploring many of the variables indivdually. Let's begin with the businesses file, which has been read into the data.frame `bus`.
+
+## Examine the Business data 
+
+From its name alone, we expect the `businesses.csv` file to contain information about the restaurants. Let's investigate the granularity of this dataset.
+
+What are the variables in this data frame?
+
+```{r}
+names(bus)
+```
+
+
+Is there one record per bus ID?
+Consider checking the number of rows against the number of unique business IDs. Also check the number of unique names. Try using the `length()` and `unique()` functions together. 
+Are they the same?
+
+```{r}
+nrow(bus)
+length(unique(bus$business_id))
+```
+
+
+With this information, you can address the question of granularity and also answer the questions below.
+
+1. What is the granularity of the businesses data frame? 
+1. How many records are there?
+1. What does each record represent (e.g., a store, a chain, a transaction)?  
+1. What is the unique identifier for each record?
+
+### Answer: 
+The *bus* data frame has high granularity, with nine variables describing each entity, of which there are 6315. Each entity represents a restaurant that is uniquely identified by the *business_id* variable.
+
+## Zip codes
+
+Next, let's  explore some of the variables in the business table. We begin by examining the postal code.
+
+Is zip code quantitative or qualitative variable? If qualitative, is it ordinal or nominal? 
+
+How is the postal code stored in the data frame?
+
+```{r}
+class(bus$postal_code)
+```
+
+### Answer:
+Although zip codes are numbers, they do not represent quantitative data. They are nominal qualitative data stored as characters in the data frame. It doesn't make sense to measure differences or scale postal code.
+
+How many postal codes are in the data?
+
+```{r}
+length(unique(bus$postal_code))
+```
+
+Do you see any problems with the values of this variable?
+
+### Answer:
+47 is a lot less than my intuitive expectation, but if the average zip code covers a large enough area to include many restaurants, it might make sense. We need to investigate further.
+
+To explore the zip code values, it makes sense to examine counts, i.e., the number of records  that have the same zip code value. This is essentially answering the question: How many restaurants are in each zip code? 
+
+
+```{r}
+count(bus, postal_code)
+```
+
+
+We see that there are many blanks. Also, there is some bad data where the
+postal code got screwed up, e.g., there are 3 `Ca' and 3 `CA' values
+We also have some extended postal codes (those codes with more than 5 digits).
+
+Let's clean up the extended codes by dropping the digits beyond the first 5. You can use the `substr' function for this
+Remember to keep the original variable. Call the new variable `zip' and add it to the data frame.
+
+```{r}
+bus = mutate(bus, zip = substr(postal_code, 1, 5))
+count(bus, zip)
+```
+
+### Missing Postal codes
+
+We notice that there are still a lot of missing values! Examine the businesses with missing zipcode values. Pay attention to their addresses. Are there any patterns to missing values in zip codes?
+
+```{r}
+head(filter(bus, zip == ""), 20)
+```
+
+Are they legitimate restaurants? Do they have addresses?
+
+### Answer:
+These are legitimate restaurants with addressess.
+
+Many of the restuarants without zipcodes are "off the grid" indicating that they are moving restaurants.
+Therefore a missing zipcode might actually make sense and dropping these from analysis could bias our conclusions.
+
+
+### One restaurant zip codes
+
+Often times, we need to get additional information in order to understand whether or not the data are bad values or simply unusual values. With zip codes, we can use the Internet to investigate the zip codes that have only a few businesses. Investigate the restaurants at the following zip codes: *94545*, *94602*, and *94609*.  
+
+Briefly describe why these strange zip codes might be appropriate.  Where are they located and how might they relate to San Francisco?
+
+
+Text Answer
+Answer
+94545 - Hayward, look at record and see it's vending machine company with many locations 
+
+94602 - Oakland, look at the record and see it's probably a typo and should be 94102
+
+94609 - Oakland, Food truck based in oakland but probably travels around.
+
+
+Often we want to clean the data to improve our analysis. This cleaning might include changing values for a variable or dropping records.
+
+Let's correct 94602 to the more likely value based on your analysis. Modify the derived field `zip' to replace 94602 with the correct value.
+
+```{r}
+bus$zip[bus$zip == "94602"] = "94102"
+
+count(bus, zip)
+```
+
+
+
+## Latitude and Longitude
+
+Another aspect of the data we want to consider is the prevalence of missing values. If many records have missing values then we might be concerned about whether the nonmissing values are represenative of the population.
+ 
+Consider the longitude and latitude in the business DataFrame. 
+
+
+How many businesses are missing longitude and latitude values? Use the `is.na()` and `sum()` functions to do this
+
+```{r}
+bus %>% summarise(sum(is.na(longitude)))
+bus %>% summarise(sum(is.na(latitude)))
+```
+
+
+Do some zip codes have more than their fair share of missing lat/lon values?
+
+Let's reduce our comparison to just those zip codes that are in SF and that have many businesses. Below is a list of these zip codes. 
+
+
+```{r}
+validZip = c("94102", "94103", "94104", "94105", "94107",
+"94108", "94109", "94110", "94111", "94112", "94114","94115",
+"94116", "94117", "94118", "94121", "94122", "94123", "94124",
+"94127", "94131", "94132", "94133", "94134")
+```
+
+For these zip codes find the number of businesses with and without lat and lon values.
+Use the `%in%` function and `validZip` to filter `bus` to create a data frame with only the valid zip codes. Call this new data frame `busR`.
+
+```{r}
+busR = filter(bus, zip %in% validZip)
+
+count(busR,is.na(longitude))
+count(busR,is.na(latitude))
+```
+
+
+## Summary of the business data
+
+Before we move on to explore the other data, let's take stock of what we have learned and the implications of our findings on future analysis. 
+
+* We found that the business id is unique across records and so we may be able to use it as a key to join tables. 
+* We also found that there are some bad values in zip code. As a result, we may want to drop the records with zip codes outside of San Francisco or to treat them differently. For some of the bad values, we may want to take the time to look up the restaurant address online and fix these errors.   
+* We also found that there are many missing values in latitude and longitude. These may have implications on map making and geographic patterns if the missingness is related to location or restaurant score.
+
+
+# Investigate the inspection data
+
+Let's now turn to the inspection dataframe. Earlier, we found that `ins` has 4 columns, these are named `business_id`, `score`, `date` and `type`.  In this section, we determine the granularity of `ins` and investigate the kinds of information provided for the inspections. 
+
+
+As with the business data, assess whether there is one inspection record for each business. Explore the records at the head and middle and tail of the file. How many records does business #19 have in this file?  What distinguishes these records? 
+
+
+```{r}
+head(ins, 12)
+ins[7716:7727,]
+tail(ins, 12)
+
+count(ins,business_id=="19")
+```
+
+Make a histogram of the number of inspections that each business has.
+To do this consider using `count()`. Assign the return value from `count` to `num_ins`,
+and make a histogram using one of the variables in `num_ins`.
+
+```{r}
+num_ins <- ins %>% group_by(business_id) %>% summarise(n=n())
+
+head(num_ins)
+```
+
+
+```{r}
+ggplot(data = num_ins, aes(x = n)) +
+  geom_histogram(bins=30)
+```
+
+
+###  The type variable
+
+Next, we examine the `type` variable. From examining the first few rows of `ins`, we see that `type` is a string and one of the values in the string is 'routine', presumably for a routine inspection. What values does `type` take on? How many occurrences of each value is in the DataFrame? What are the implications for further analysis?
+
+```{r}
+range(ins$type)
+```
+
+All have the same value, "routine",  except one record. 
+This variable will not be useful in any analysis because it provides no information.
+
+### Dates
+
+Since the data is stored in a .csv file, the dates are formatted as integers, such as 20160503 for 03 May 2016. Once we read in the data, we would like to have dates in an appropriate format for analsysis. Add a new column called newDate which formats the date into a datetime object. Use the `dplyr` function `as.Date` to do this.
+Also add a column with only the year to the data frame.
+Call this column `year'.
+
+
+```{r}
+ins = mutate(ins, newDate = as.Date(as.character(date), "%Y%m%d"))
+```
+
+
+```{r}
+ins = mutate(ins, year = format(newDate, "%Y"))
+```
+
+
+
+What range of years is covered in this data set?
+Are there roughly same number of inspections each year?
+
+```{r}
+range(ins$year)
+```
+
+Answer:
+No, 2013 has only a few inspections. 
+Also 2015 has far fewer inspections than 2014 or 2016.
+
+Let's examine only the inspections for one year, 2016. This puts businesses on a more equal footing because [inspection guidelines](https://www.sfdph.org/dph/eh/Food/Inspections.asp) generally refer to how many inspections should occur in a given year.
+
+
+```{r}
+ins2016 = filter(ins,year=="2016")
+```
+
+
+## Explore inspection score
+
+What does the distribution of inspection score for 2016 look like? The inspection scores appear to be integer values. The discreteness of this variable means that we can use a barplot or a histogram to visualize the distribution of the inspection score. Make a histogram of the counts of the number of inspections for each score, that is, make sure the bin width is 1.
+
+
+```{r}
+ggplot(data = ins2016,aes(x = score)) + 
+  geom_histogram(binwidth = 1)
+```
+
+Describe the qualities of the distribution of the inspections scores. Consider the mode(s), symmetry, tails, gaps, and anamolous values. Are there any unusual features of this distribution? What do your observation imply about the scores?
+
+The distribution is unimodal with a peak at 100. 
+
+The distribution is skewed left (as expected with a variable bounded on the right). The distribution has a long left tail with some restaurants receiving scores 
+that are in the 50s, 60s, and 70s. 
+
+One unusal feature of the distribution is the 
+bumpiness with even numbers having higher counts than odd. This may be because the violations result in penalties of 2, 4, 10, etc. points.
+
+
+## Assessing Granularity
+
+In assessing the granularity, we want to determine if there is one inspection per business per year. How many restaurants had two inspections? Three or more inspections in 2016? 
+
+To answer this question, try nesting two calls to `count()`.
+What happens when you do this?
+
+```{r}
+count(count(ins2016,num_ins2016=business_id),num_ins2016=n)
+```
+
+
+Over 80 restaurants had 3 inspections in a calandar year. That's not so many.
+
+## Restaurants with multiple inspections
+
+Some restaurants had 3 inspections in a calandar year, but not very many did. To examine the distribution of score among restaurants with two scores, we can look at the change in score from the first inspection.
+
+What's the relationship between the first and second scores for the businesses with 2 inspections in a year? Do they typically improve?
+
+First, make a dataframe called, `score_pairs`, indexed by business_id (containing only businesses with exactly 2 inspections in 2016).  
+
+You may find the functions `sort_values`, `group_by`, `filter`, `count`, `slice` and `summarize` helpful, though not all necessary. 
+
+
+```{r}
+n = count(ins2016, business_id)
+
+insGroups = group_by(ins2016, business_id)
+
+first_ins = slice(insGroups, which.min(date))
+last_ins = slice(insGroups, which.max(date))
+
+score_pairs = full_join(first_ins, last_ins, by = "business_id")
+score_pairs = full_join(score_pairs, n, by = "business_id")
+
+score_pairs = filter(score_pairs, n == 2) 
+
+```
+
+
+Plot these scores. That is, make a scatter plot to display these pairs of scores. Include on the plot a reference line with slope 1. 
+
+```{r}
+ggplot(score_pairs, aes(x = score.x, y = score.y)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0)
+```
+
+
+If a restaurant's score improves from the first to the second inspection, what do you expect to see in the scatter plot? What do you see?
+
+If the restaurants tend to improve from the first to the second inspection, we would expect to see the points in the scatter plot fall above the line of slope 1. Interestingly, we don't see this. The second inspection often is worse than first. 
+
+
+Another way to compare the scores from the two inspections is to examine the difference in scores. Subtract the first score from the second in scores_pairs_by_business. Make a histogram of these differences in the scores. We might expect these differences to be positive, indicating an improvement from the first to the second inspection.
+
+
+```{r}
+score_pairs = mutate(score_pairs, score_diff = score.y - score.x)
+
+ggplot(score_pairs, aes(x = score_diff)) + 
+  geom_histogram() +
+  labs(x="second score - first score")
+```
+
+If a restaurant's score improves from the first to the second inspection, how would this be reflected in the histogram of the difference in the scores that you made? What do you see?
+
+If the restaurants tend to improve from the first to the second inspection, we would expect to see the histogram of the difference in scores to be shifted toward positive values. 
+The histogram of differences shows a unimodal distribution with a peak close to 0. 
+This distribution has long tails with some scores being as low as -20 and others as high as 20-30.
+
+## Summary of the inspections data
+
+What we have learned about the inspections data? What might be some next steps in our investigation? 
+
+* We found that the records are at the inspection level and that we have inspections for multiple years.   
+* We also found that many restaurants have more than one inspection a year. We may want to roll some of the information about the inspections up to the business/restaurant level and join the inspection information with the business dataframe. 
+* We also examined the relationship between the scores when a restaurant has multiple inspections in a year. Our findings were a bit counterintuitive and warrant further investigation. It makes sense to learn more about the inspection process to help us understand the connections between scores from multiple inspections.
+
+
+
+
+# Violations Data
+
+Lastly, we will explore the `vio` data set. As with the first two DataFreames, we want to determine the granularity of the data, the number of records and fields, and we want to investigate the fields (variables). 
+
+How many records are in `vio`? What does this tell you about the granularity of `vio` in comparison to `bus` and `ins`? 
+
+```{r}
+nrow(vio)
+str(vio)
+```
+
+### Answer:
+The *vio* data frame is far less granular than *bus*, although rather comparable to *ins*, in so far as it has few variables detailing each observation.
+
+The violations file has more records than the inspection file.
+
+Examine the first few records of `vio`.
+
+```{r}
+head(vio)
+```
+
+Just looking at the first few records  in `vio` we see that each inspection has multiple entries. Reading the descriptions, we see that if corrected, a date is listed in the description within square brackets. This date appears to be the same date as the inspection.
+
+
+
+Let's again format the date and place it in the variable `newDate` and place the year in `year`.
+Let's also restrict to inspections in 2016. Place the subset in a data frame `vio2016`.
+
+```{r}
+vio = mutate(vio, newDate = as.Date(as.character(date), "%Y%m%d"),
+              year = format(newDate, "%Y"))
+
+vio2016 <- vio %>% filter(year=="2016")
+```
+
+
+## Number of violations
+
+When we explore data, we often create new variables that we think might be useful in our analysis. For example, a variable that contains the number of violation records per inspection may be of interest. We might want to see if the number of inspections is correlated with the inspection score.  Or, we might be interested in whether the score improves on the second inspection. 
+
+Derive a variable, `num_vio`, that contains the number of violations in a restaurant inspection.
+                   
+```{r}
+num_vio <- vio2016 %>% group_by(business_id,date) %>% summarise(n=n())
+```
+
+What is the distribution of num_vio? Make a histogram and describe its shape.
+
+
+```{r}
+ggplot(num_vio, aes(x = n)) + 
+  geom_histogram() +
+  labs(x="Number of violations per inspection in 2016")
+```
+
+
+The distribution is unimodal with a mode around 2 violations. 
+The distribution is right skewed with some restaurants having 6-10 violations 
+in one inspection.
+
+## Summary of the violations data
+
+Let's take stock of what we have learned about the violations data and what might be the next steps in our investigation. 
+
+* We found that the records consist of the violations that were found on an inspection. And from inspection it seems that if a violation is corrected this information is provided in the description field.
+* We also found that the distribution of the number of violations shows that some restaurants had many violations. 
+* In the future, we might want to investigate the relationship between the inspection score and the number of violations. Additionally, it might be interesting to pursue possible connections between the type of violation and the score
+
+
+# Rolling up to the restaurant level 
+
+Let's pursue the investigation of the relationship between the inspection score and the number and type of violations. To do this, we need to merge the information in `ins` and `vio`.
+We could also merge this information with the business data set in order to have the name, address, and lat/lon of the restaurant.
+
+## Merging business and inspection data
+
+For simplicity let's consider only one inspection per restaurant.  Which score should we use? The earlierst, lowest?
+
+Let's also create a new variable which is the number of inspections that each restaurant had. 
+
+
+Our initial plan is to:
+* merge `bus` and `ins2016` at the business level
+* keep the score and date of the first inspection
+* derive a new variable containing the number of inspections 
+
+To do this, consider `group_by`, `mutate`, `left_join`,  `inner_join`, `slice`, `count`, `summarize`. 
+We suggest first rolling up the inspections file to have one record per business and keeping only those restaurants that were inspected in 2016. 
+
+```{r}
+n = count(ins2016, business_id)
+
+insGroups = group_by(ins2016, business_id)
+
+first_ins = slice(insGroups, which.min(date))
+num_ins = count(ins2016, business_id)
+
+ins2016_one_score = left_join(first_ins, num_ins, by = "business_id")
+
+
+ins2016_merge = inner_join(bus, ins2016_one_score, by = "business_id")
+
+```
+
+
+Confirm that the rollup and merge worked as expected. 
+
+```{r}
+str(ins2016_merge)
+```
+
+
+## Examining violations data
+
+In order to compbine inspection and violation information,
+we need to decide on the granularity. Do we want to add the inspection score to each violation record? Or roll the violations up to the inspection level? Or to the restaurant level?
+
+Let's do the following:
+
+* Count the number of violations per inspection.
+* Count the number of violations corrected.
+* Derive indicator variables for the presence of certain problems, e.g., vermin, human cleanliness, floor cleanliness, etc.
+
+In order to create these indicator variables, we will need some simple regular expressions. 
+
+
+To figure out what variables you would like to derive for analysis, first carry out an exploration of the `description` of the violation.
+
+
+## Types of violations
+
+How many unique violations are there? 
+
+```{r}
+length(unique(vio2016$description))
+```
+
+There's more than one per restaurant! Inspect the descriptions to see how there could be so many unique values.
+
+```{r}
+head(vio2016$description, 20)
+```
+
+Notice that when the violation is corrected, the description includes information about when it was corrected, e.g.' "[ date violation corrected: 9/1/2016 ]".  
+The correction date makes otherwise identical violations unique.
+We can adjust the descriptions to make the more similar by dropping this information from the description. 
+
+Use a regular expression to create a new description, called `desc2` that does not contain the correction information. How can you identify these portions of the string and remove them? 
+What caharacteristics do they have?
+
+* Where in the string do they occur?
+* Are there delimiters that isolate the correction?
+* Check for extra and leading and trailing blanks?
+
+
+```{r}
+vio2016 = mutate(vio2016, desc2 = sub("\\[.*\\]", "", description) )
+
+# Next eliminate any trailing blanks created by this substitution
+vio2016 = mutate(vio2016, desc2 = sub("\\ &", "", desc2))
+```
+
+* Also consider converting all upper case letters to lower case so that if, e.g., "Unclean" appears at the beginning of a string and "unclean" appears somewhere in the middle of the string, we consider these the same words. Use `tolower()` to do this
+
+```{r}
+vio2016 = mutate(vio2016, desc2 = tolower(desc2))
+```
+
+Now how many different violations are there?
+
+```{r}
+length(unique(vio2016$desc2))
+```
+
+
+That's far fewer. 
+Let's examine the 20 most common violations to see if there 
+are types of violations that we might be able to quantify.
+Create a table of counts violations and examine the top 25. 
+
+
+```{r}
+vioTable = count(vio2016, desc2)
+
+head(arrange(vioTable, desc(n)),25)
+```
+
+
+Also, examine the 25 least common. Are they very different from the most common?
+
+```{r}
+head(arrange(vioTable, n),25)
+```
+
+### Answer:
+The least common violations do not seem significantly different or less important than the most common ones.
+
+## Derive violation indicators
+
+Create about 10 indicator variables that indicate a certain kind of variation.
+Try to have some of these variables group descriptions with a common theme together.
+For example, does the desctiption mention rats, mice, or other vermin? Is it related to the cleanliness of the workers in the restaurant? Or the facilities?
+
+
+```{r}
+unclean = grepl("unsanitary", vio2016$desc2) | 
+  grepl("unclean", vio2016$desc2) |
+  grepl("clean", vio2016$desc2)
+
+human = grepl("hand", vio2016$desc2) | 
+  grepl("hair", vio2016$desc2) |
+  grepl("nail", vio2016$desc2)
+
+infest = grepl("rats", vio2016$desc2) | 
+  grepl("mice", vio2016$desc2) |
+  grepl("vermin", vio2016$desc2)
+
+law = grepl("permit", vio2016$desc2) | 
+  grepl("high risk", vio2016$desc2) |
+  grepl("unapproved", vio2016$desc2)
+
+safety = grepl("risk", vio2016$desc2) | 
+  grepl("contamination", vio2016$desc2) |
+  grepl("safety", vio2016$desc2)
+
+infrastructure1 = grepl("sewage", vio2016$desc2) | 
+  grepl("plumbing", vio2016$desc2) |
+  grepl("floors", vio2016$desc2)
+
+infrastructure2 = grepl("ventilation", vio2016$desc2) | 
+  grepl("warewashing", vio2016$desc2) |
+  grepl("rooms", vio2016$desc2)
+
+equipment = grepl("thermometer", vio2016$desc2) | 
+  grepl("handwashing", vio2016$desc2) |
+  grepl("utensils", vio2016$desc2)
+
+risks = grepl("risk", vio2016$desc2) | 
+  grepl("hazards", vio2016$desc2) |
+  grepl("contamination", vio2016$desc2)
+```
+
+Add your indicator variables to the `vio2016` data frame.
+
+```{r}
+vio2016_dummy = data.frame(unclean,human,infest,law,safety,infrastructure1,
+                           infrastructure2,equipment,risks)
+
+vio2016_all = bind_cols(vio2016, vio2016_dummy)
+```
+
+
+Aggregate to the inspection level. You wll need to group by business id and date to do this.
+Then summarize the grouped data so that each of the indicators is TRUE if any of the violations had the value of TRUE. Also, create a new variable called `num_vio` that contais the number of violations in the inspection. Call the aggregated data frame `aggVio`
+
+```{r}
+aggVio = group_by(vio2016_all, business_id, newDate)
+aggVio = summarize(aggVio, unclean=any(unclean),human=any(human),infest=any(infest),law=any(law),safety=any(safety),
+                           infrastructure1=any(infrastructure1),infrastructure2=any(infrastructure2),equipment=any(equipment),
+                           risks=any(risks),
+                   num_vio=n())
+
+```
+
+
+## Merging violations
+
+Merge `aggVio` with the inspection data frame `ins2016_merge`. This should be a left join with `ins2016` on the left. 
+
+```{r}
+ins_vio_merge = left_join(ins2016_merge,aggVio,by="business_id")
+```
+
+Note that some restaurants were inspected and no violations listed,
+even when the score is not perfect.
+
+Will want to fill in the violation variables, especially the num_vio should 
+be set to 0. Should the logicals be set to FALSE?
+
+```{r}
+ins_vio_merge = mutate(ins_vio_merge,num_vio=replace(num_vio,is.na(num_vio),0))
+
+ins_vio_merge = replace_na(ins_vio_merge, list(unclean=FALSE,human=FALSE,infest=FALSE,law=FALSE,safety=FALSE,infrastructure1=FALSE,
+                                               infrastructure2=FALSE,equipment=FALSE,risks=FALSE))
+```
+
+A scatter plot of the score and number of violations for 
+restaurants with multiple violations
+
+```{r}
+ggplot(ins_vio_merge, aes(x = score, y = num_vio)) +
+  geom_point()
+```
+
+Compute the correlation between the number of violations and the score.
+
+```{r}
+cor(ins_vio_merge$num_vio,ins_vio_merge$score)
+```
+
+Are some violations more costly in terms of points than others?
+
+### Answer:
+It seems so, since if it were not true, we would expect a correlation closer to -1.
+
+```{r}
+library(gridExtra)
+
+p0 = ggplot(ins_vio_merge, aes(y = score))
+p1 = p0 + geom_boxplot(aes(x = unclean))
+p2 = p0 + geom_boxplot(aes(x = human))
+p3 = p0 + geom_boxplot(aes(x = infest))
+p4 = p0 + geom_boxplot(aes(x = law))
+p5 = p0 + geom_boxplot(aes(x = safety))
+p6 = p0 + geom_boxplot(aes(x = infrastructure1))
+p7 = p0 + geom_boxplot(aes(x = infrastructure2))
+p8 = p0 + geom_boxplot(aes(x = equipment))
+p9 = p0 + geom_boxplot(aes(x = risks))
+
+grid.arrange(p1, p2,p3, p4, p5, p6, p7, p8, p9,  ncol=3)
+
+```
+
+Fit a linear model that explains the score as a function of the type of violation.
+
+```{r}
+lm(score ~ unclean + human + infest + law + safety + infrastructure1 + infrastructure2 + equipment + risks, 
+   data = ins_vio_merge)
+```
+
+Explain what the coefficients mean
+
+### Answer:
+The coefficients of our variables are the correlation coefficients, i.e. they indicate the correlation between the specific variable and the score.
+
+Arrange in order of median score for violation
+
+```{r}
+grid.arrange(p1,p5,p6,p8,p7,p9,p2,p3,p4,ncol=3)
+```
+
+
+
+

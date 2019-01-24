@@ -1,0 +1,23 @@
+---
+title: "Chapter 7 and 8 Practical B"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Consider the collective risk model \[S=\sum_{i=1}^N X_i\]  with $N \sim$Poisson$(\lambda)$  and $X \sim \textrm{exp}(\alpha)$. Following on (a) and (b) in Practical 7&8A: 
+
+c) Use R to calculate the empirical $E[S]$  and $var(S)$   for each case (i) and (ii).
+
+```{r}
+#ANSWER HERE
+
+```
+d) Discuss the use of the normal approximation for each case (i) and (ii) using the information produced in (a) - (c). Plot a normal curve onto the histogram plotted in (b) as well. 
+
+```{r}
+#ANSWER HERE
+
+```

@@ -1,0 +1,142 @@
+---
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+# Practical 5 - Programming
+# Submission: 3 September 2018, 17:30
+# SJP Eloff (Student nr. 10237161)
+
+## Question 1: Check if a number is positive, negative or zero
+A number entered by a user is checked whether its a positive number or a negative number or zero. The output of the code is a print statement that prints the type of number (positive, negative or zero).
+
+In order to do this, you need to understand if statements, variables and constants and operators.
+
+```{r, question_1}
+num <- -5
+
+if(num>0){
+  print("positive")
+}else{
+if(num==0){
+  print("zero")
+}else{
+  print("negative")
+}
+}
+
+```
+## Question 2: Check wheter an integer is a prime number
+A positive integer greater than 1 which has no other factors except 1 and the number itself is called a prime number.
+Step 1 is to check if the number is greater than 1
+Step 2 is to check if the number is exactly divisible by any number from 2 to number - 1. If we find a factor in that range, the number is not prime. Else the number is prime.
+
+The output of the code is a print statement that prints whether the number is a prime number or not.
+
+For this question you will need the if...else statement, for loop, break and next statement.
+
+```{r, question_2}
+num <- 53 
+
+output=0
+# check if num is greater than 1
+if(num>1){
+# check num's factors
+  output=1
+  for(i in 2:(num-1)){
+    if ((num%%i)==0) {
+    output=0
+    break
+    }
+  }
+}
+
+# output the result
+if(num==2) output=1
+
+if(output==1){
+  print(paste(num,"is prime"))
+}else{
+  print(paste(num,"is not prime"))
+}
+```
+
+## Question 3: Find the factorial of a number
+The factorial of a number is the product of all the integers from 1 to that number.
+Step 1: Check if the number is negative, positive or zero.
+Step 2: If the number is negative, print: "Sorry, factorial does not exist for negative numbers"
+Step 3: If the number is zero, print: "The factorial of 0 is 1"
+Step 4: For all other numbers, print the factorial of the number.
+
+For this question you will use the if...else Statement and the for Loop.
+
+```{r, question_3}
+num <- 12
+factorial <- 1
+
+# check if negative, positive or zero
+if(num<0){
+  print("Sorry, factorial does not exist for negative numbers")
+}else if(num==0){
+  print("The factorial of 0 is 1")
+}else{
+  for(i in 1:num){
+    factorial=factorial*i
+  }
+  print(paste("The factorial of",num,"is",factorial))
+}
+```
+## Question 4: Check for a leap year
+A leap year is exactly divisible by 4 except for century years (years ending with 00). The century year is a leap year only if it is perfectly divisible by 400.
+The output is a print statement print whether the year (user input) is a leap year or not.
+For this question you will use the if...else Statement and operators
+
+```{r, question_4}
+year <- 3000 
+
+# nested ifs for each restriction
+if((year%%4)==0){
+  if((year%%100)==0){
+    if((year%%400)==0){
+      print(paste(year,"is a leap year"))
+    }else{
+      print(paste(year,"is not a leap year"))
+    }
+  }else{
+    print(paste(year,"is a leap year"))
+  }
+}else{
+  print(paste(year,"is not a leap year"))
+}
+
+```
+
+## Question 5: Find the greatest common divisor
+The greatest common divisor (GCD) of two numbers is the largest positive integer that perfectly divides the two given numbers.
+For example, the H.C.F of 12 and 14 is 2.
+The output of this question is a print statement that prints the GCD of the two input numbers.
+For this question you will use: functions, for Loop, if...else Statement, while loop
+
+```{r, question_5}
+num1 <- 18 
+num2 <- 6
+
+f_gcd <- function(x,y){
+  if(x>y){
+    small=y
+  }else{
+    small=x
+  }
+  for(i in 1:small){
+    if((x%%i==0)&&(y%%i==0)){
+      ans=i
+    }
+  }
+  return(ans)
+}
+
+# output, calling the function
+print(paste("The GCD of",num1,"and",num2,"is",f_gcd(num1,num2)))
+```
+
+

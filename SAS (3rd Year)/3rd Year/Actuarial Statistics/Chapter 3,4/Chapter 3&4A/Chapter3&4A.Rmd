@@ -1,0 +1,47 @@
+---
+title: "Chapter 3 and 4 Practical A"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+# Chapter 3: 
+
+Consider the Pareto$(\alpha, \lambda)$  distribution for the data set in the associated excel file provided.
+
+a) Import the data into R.
+
+```{r}
+library(xlsx)
+mydata <- read.xlsx("ParetoDataSet.xlsx",sheetIndex=1,header=FALSE)
+```
+
+b) Derive theoretical formulas for the estimates for $\alpha$  and $\lambda$, using the method of moments. Type your answer here using Latex.
+
+c) Determine numerical values for the estimate in (b) for the imported data. 
+
+```{r}
+sumx <- mydata %>% summarize(sum(mydata))
+sumx2 <- mydata %>% summarize(sum(mydata^2))
+n <- mydata %>% summarize(n())
+xbar <- sumx/n
+xbar2 <- xbar*xbar;
+alpha_A <- 2*(sumx2/n-xbar2)/(sumx2/n-2*xbar2)
+alpha_A
+lamda_A <- (alpha_A-1)*xbar
+lamda_A
+```
+
+# Chapter 4:
+
+Consider an excess-of-loss reinsurance arrangment with level $M=1500$. The underlying claims $X$ are assumed to be N($1000, 50^2$).
+
+Simulate 100 values of the inurer's losses $Y$, as well as the corresponding 100 values of the reinsurer's losses $Z$. 
+
+```{r}
+
+
+```

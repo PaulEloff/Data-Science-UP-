@@ -1,0 +1,166 @@
+%% LyX 2.2.2 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass[english]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin9]{inputenc}
+\usepackage[a4paper]{geometry}
+\geometry{verbose,tmargin=3cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\usepackage{color}
+\definecolor{note_fontcolor}{rgb}{0.800781, 0.800781, 0.800781}
+\usepackage{array}
+\usepackage{verbatim}
+\usepackage{rotfloat}
+\usepackage{url}
+\usepackage{amstext}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{setspace}
+\doublespacing
+
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+%% Because html converters don't know tabularnewline
+\providecommand{\tabularnewline}{\\}
+%% The greyedout annotation environment
+\newenvironment{lyxgreyedout}
+  {\textcolor{note_fontcolor}\bgroup\ignorespaces}
+  {\ignorespacesafterend\egroup}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Textclass specific LaTeX commands.
+\theoremstyle{plain}
+\newtheorem{thm}{\protect\theoremname}
+\ifx\proof\undefined
+\newenvironment{proof}[1][\protect\proofname]{\par
+\normalfont\topsep6\p@\@plus6\p@\relax
+\trivlist
+\itemindent\parindent
+\item[\hskip\labelsep\scshape #1]\ignorespaces
+}{%
+\endtrivlist\@endpefalse
+}
+\providecommand{\proofname}{Proof}
+\fi
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{amsmath,epsfig,natbib,pstricks,pst-text,pst-node,pst-plot,amssymb,wrapfig,threeparttable,rotating}
+
+\makeatother
+
+\usepackage{babel}
+\providecommand{\theoremname}{Theorem}
+
+\begin{document}
+
+\title{WST 312 Template}
+
+\author{First Name and Surname Student Number\vspace{0.5cm}\\
+Department of Statistics, University of Pretoria\vspace{0.5cm}\\
+\includegraphics[width=5cm]{UPlogohighres.jpg}\vspace{0.5cm}\\
+Enter date of document here}
+
+\date{}
+
+\maketitle
+\newpage{}
+
+\tableofcontents{}
+
+\listoffigures
+
+\listoftables
+
+\newpage{}
+
+\section{Equation Formats}
+
+You can rename the section to what ever is approriate.
+
+Inline equation: $x=y$
+
+Display equation: \[x=y\]
+
+Numbered display equation: 
+\begin{equation}
+x=y\label{eq:afe,fjgd}
+\end{equation}
+
+
+
+Equation array: 
+
+\begin{eqnarray*}
+x & = & y+2+3\\
+ & = & y+5.
+\end{eqnarray*}
+
+Equation array:
+
+$f(x)=\left\{ \begin{array}{cc}
+1 & \textrm{\textrm{if }}x<2\\
+2 & \textrm{if }x\ge2
+\end{array}\right.$ {and}
+$f(x)=\left\{ \begin{array}{cc}
+1 & \textrm{\textrm{if }}x<2\\
+2 & \textrm{if }x\ge2
+\end{array}\right.$
+
+
+\section{Tables and Figures}
+
+In Figure \ref{fig:UPlogo} and in Figure \ref{fig:Caption} we see
+the UP logo. %
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=6cm]{UPlogohighres.jpg}
+\caption{A graphic of the UP logo\label{fig:UPlogo}}
+\end{figure}
+
+
+
+
+\begin{sidewaystable}
+\begin{centering}
+\begin{tabular}{|>{\centering}p{3cm}|c|c|c|>{\centering}p{3cm}|}
+\multicolumn{1}{>{\centering}p{3cm}|}{} &  &  &  & \tabularnewline
+klvunl ruvynryrinfsfgng hdfhfgjf gjfhjghjhk jhkghjkh dfhdj ghkjfgj
+djdj dghjhhjghj & aevirue$x=y$n oiurlevniq & ermwovmi;q & aevpimqw & ovmi;\tabularnewline
+ &  &  &  & \tabularnewline
+ &  &  &  & \tabularnewline
+ &  &  &  & \tabularnewline
+\end{tabular}
+\par\end{centering}
+\caption{rvybruvybrv \label{tab:test}}
+
+\end{sidewaystable}
+
+\begin{table}
+\begin{centering}
+\begin{tabular}{|>{\centering}p{4cm}|>{\centering}p{4cm}|>{\centering}p{4cm}|}
+\hline 
+\multicolumn{1}{|>{\centering}p{4cm}||}{} & \multicolumn{1}{>{\centering}p{4cm}||}{Column 1} & Column 2\tabularnewline
+\hline 
+\hline 
+Row 1 &  & \tabularnewline
+\hline 
+Row 2 &  & \tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{Example \label{tab:Example}}
+\end{table}
+ The application should be presented in this section. Code should
+be included in an appendix as well as additional output if needed. 
+
+\newpage{}
+
+\bibliographystyle{plain}
+\bibliography{BibliographyDatabase}
+
+\newpage{}
+
+\section*{Appendix\addcontentsline{toc}{section}{Appendix}}
+
+Include any additional code, output or data here. 
+\end{document}

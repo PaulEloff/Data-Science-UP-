@@ -1,0 +1,105 @@
+---
+output: html_document
+editor_options:
+  chunk_output_type: console
+---
+# SJP Eloff (10237161)
+# Practical 4 - Data Wrangling
+# Submission: 20 August 2018, 17:30
+
+A researcher is interested in how variables, such as GRE (Graduate Record Exam scores), GPA (grade point average) and prestige of the undergraduate institution, effect admission into graduate school. The response variable, admit/don't admit, is a binary variable
+
+```{r message=FALSE,cache=FALSE, echo=FALSE, warning=FALSE}
+library("tidyverse")
+library("data.table")
+```
+
+## Data Import
+
+### Question 1 - Import the dataset 'binary.csv'
+1. Make sure your Working Directory is set to source file location
+2. Save the data file in the same directory as this .rmd file
+
+### Answers 1
+```{r, question_1_comments, echo=FALSE}
+#Importing the binary.csv dataset into a newly created dataframe called binary:
+```
+
+```{r, question_1}
+binary <- read.csv('binary.csv')
+str(binary)
+```
+
+### Question 2 - Tibbles
+
+a. Print the first 20 values of the tibble 'admit'
+b. How many variables does the tibble have?
+c. How many observations does the tibble have?
+d. Extract the variable 'gpa' by name and assign it as the variable 'gpa'
+e. Extract the variable 'gre' by position and assign it as the variable 'gre'
+
+### Answers 2
+```{r, question_2_comments, echo=FALSE}
+#By printing the 'admit' tibble in a), we can answer questions b) and c) from simple observation. Further data manipulation is done in d) and e), as required.
+```
+
+```{r, question_2}
+#a
+admit <- fread('binary.csv',select=c(1),nrows=20)
+admit                 
+```
+b. The 'admit' tibble has 1 variable.
+c. The 'admit' tibble has 20 observations.
+```{r, question_2d}
+#d
+gpa <- fread('binary.csv',select="gpa")
+str(gpa)
+#e
+gre <- fread('binary.csv',select=c(2))
+str(gre)
+```
+
+### Question 3 - Tidy data
+The tidyr::who dataset contains tuberculosis (TB) cases broken down by year, country, age, gender, and diagnosis method. The data comes from the 2014 World Health Organization Global Tuberculosis Report. This is a very typical real-life example dataset. It contains redundant columns, odd variable codes, and many missing values. This case study is documented in the textbook 'R for Data Science'.
+
+```{r, echo=FALSE}
+tidyr::who
+```
+
+a. Tidy the tibble as illustrated in the textbook (http://r4ds.had.co.nz/tidy-data.html#case-study)
+b. For each country, year, and sex compute the total number of cases of TB using grouping, filtering, sum and other functions.
+c. Make an informative visualisation of the data in b (using three graphs)
+
+```{r, question_3_comments, echo=FALSE}
+#After tidying the data in a) and manipulating it in b) we produce useful visual representations of the data in c).
+```
+
+```{r, question_3}
+#a
+
+who1 <- who %>%
+  gather(key="key",value="cases",new_sp_m014:newrel_f65,na.rm=TRUE) %>%
+  mutate(key=stringr::str_replace(key,"newrel","new_rel")) %>%
+  separate(key, c("new","var","sexage")) %>%
+  select(-new,-iso2,-iso3) %>%
+  separate(sexage,c("sex","age"),sep=1)
+#b
+who2 <- who1 %>%
+  group_by(country,year,sex) %>%
+  filter(year>1995) %>%
+  summarise(cases=sum(cases)) %>%
+  unite(country_sex,country,sex,remove=FALSE) %>%
+  unite(country_year,country,year,remove=FALSE)
+who2
+#c
+ggplot(who2,aes(x=year,y=cases,group=country_sex,colour=sex)) +
+  geom_point() +
+  ggtitle("Cases (grouped by Country and Sex) plotted against Year")
+ggplot(who2,aes(x=sex,y=cases,group=sex)) +
+  geom_boxplot() +
+  ggtitle("Cases per Country plotted against Sex")
+ggplot(who2,aes(x=cases,stat=country)) +
+  geom_freqpoly(bins=10) +
+  ggtitle("Cases per Country plotted against Year")
+```
+
